@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #aedcf2, #c0e0f7);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    form {
+      width: 400px;
+      padding: 20px;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #2e75b6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #245e97;
+    }
+  </style>
+</head>
+<body>
+
+<form id="registroForm">
+  <h2 style="text-align: center;">Crear cuenta</h2>
+  <input type="text" id="usuario" name="usuario" placeholder="Usuario" required>
+  <input type="password" id="password" name="password" placeholder="Contraseña" required>
+  <button type="submit">Registrarse</button>
+</form>
+
+<script>
+  document.getElementById('registroForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+  
+    const usuario = document.getElementById('usuario').value;
+    const password = document.getElementById('password').value;
+  
+    fetch('/crear-cuenta', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ usuario, password })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Error al crear la cuenta');
+      }
+      return response.text();
+    })
+    .then(data => {
+      alert(data); // Muestra un mensaje con la respuesta del servidor
+      // Redirige al usuario a la página de inicio de sesión
+      window.location.href = '/login.html';
+    })
+    .catch(error => {
+      console.error(error);
+      alert('Error: No se pudo crear la cuenta');
+    });
+  });
+</script>  
+
+</body>
+</html>

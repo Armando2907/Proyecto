@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #aedcf2, #c0e0f7);
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 800px;
+      margin: 50px auto;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    .course-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .course-list li {
+      background: #f4f4f4;
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    canvas {
+      border: 1px solid black;
+      margin-top: 20px;
+    }
+    .color-selector {
+      margin: 10px;
+    }
+    #canvas {
+      border: 1px solid black;
+    }
+    input[type="text"],
+    button {
+      width: calc(100% - 22px);
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #2e75b6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    button:hover {
+      background-color: #245e97;
+    }
+    .drawing-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .drawing-item {
+      margin: 10px;
+      text-align: center;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .drawing-item img {
+      display: block;
+      margin-bottom: 10px;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Se autentico correctamente!!</h2>
+    <p id="welcomeMessage"></p>
+    <ul class="course-list" id="courseList">
+      <!-- Los cursos se agregarán aquí dinámicamente -->
+    </ul>
+
+    <!-- Botón de Logout -->
+      <button onclick="cerrarSesion()">Cerrar Sesión</button>
+
+    <!-- Área de dibujo -->
+
+    <div class="color-selector">
+      <label for="colorPicker">Selecciona el color del lápiz:</label>
+      <input type="color" id="colorPicker" value="#000000">
+    </div>
+    
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <br>
+    <input type="text" id="nombreDibujo" placeholder="Nombre del Dibujo" required>
+    <button id="saveDrawingButton">Guardar Dibujo</button>
+    <button id="clearCanvasButton">Limpiar Dibujo</button>
+  
+    <div class="drawing-container" id="drawingsContainer">
+      <!-- Los dibujos se agregarán aquí dinámicamente -->
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Obtener el token del almacenamiento local
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('No está autenticado. Redirigiendo a la página de login.');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      // Decodificar el token para obtener el userId
+      const jwtPayload = JSON.parse(atob(token.split('.')[1]));
+      const userId = jwtPayload.userId;
+
+      // Realizar una solicitud al servidor para obtener el nombre del usuario
+      fetch(`/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      .then(response => response.json())
+      .then(user => {
+        console.log('Respuesta del servidor:', user);
+        // Mostrar el nombre de usuario en el mensaje de bienvenida
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        welcomeMessage.textContent = `Bienvenido, ${user.username}`;
+      })
+      .catch(error => {
+        console.error(error);
+        alert('Error al obtener el nombre de usuario');
+      });
+
+      // Obtener y mostrar los dibujos del usuario
+      fetch('/dibujos', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      .then(response => response.json())
+      .then(dibujos => {
+        const drawingsContainer = document.getElementById('drawingsContainer');
+        dibujos.forEach(dibujo => {
+          const imgContainer = document.createElement('div');
+          const img = document.createElement('img');
+          console.log('Datos del dibujo:', dibujo.datos); // Agregar este console.log
+          img.src = `data:${dibujo.tipo};base64,${dibujo.datos}`;
+          img.alt = dibujo.nombre;
+          img.style = 'display: block; margin-bottom: 10px; max-width: 100%;';
+          const deleteButton = document.createElement('button');
+          deleteButton.textContent = 'Eliminar';
+          deleteButton.onclick = () => eliminarDibujo(dibujo.id);
+
+          const nameParagraph = document.createElement('p');
+          nameParagraph.textContent = `Nombre: ${dibujo.nombre}`;
+
+          imgContainer.appendChild(img);
+          imgContainer.appendChild(nameParagraph);
+          imgContainer.appendChild(deleteButton);
+          drawingsContainer.appendChild(imgContainer);
+        });        
+      })
+      .catch(error => {
+        console.error('Error al obtener los dibujos:', error);
+        alert('Error al obtener los dibujos');
+      });
+
+      function eliminarDibujo(dibujoId) {
+        fetch(`/eliminar-dibujo/${dibujoId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        .then(response => {
+          if (response.ok) {
+            alert('Dibujo eliminado exitosamente');
+            window.location.reload();
+          } else {
+            alert('Error al eliminar el dibujo');
+          }
+        });
+      }
+
+      // Área de dibujo
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      let drawing = false;
+
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseout', stopDrawing);
+
+      function startDrawing(event) {
+        drawing = true;
+        draw(event); // Para dibujar un punto al hacer clic
+      }
+
+      function draw(event) {
+        if (!drawing) return;
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000000';
+
+        ctx.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+      }
+
+      function stopDrawing() {
+        drawing = false;
+        ctx.beginPath();
+      }
+
+      document.getElementById('clearCanvasButton').addEventListener('click', function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      });
+
+      document.getElementById('saveDrawingButton').addEventListener('click', function() {
+        const nombre = document.getElementById('nombreDibujo').value;
+        if (!nombre) {
+          alert('Por favor, introduce un nombre para el dibujo');
+          return;
+        }
+
+        const datosBase64 = canvas.toDataURL().split(',')[1];
+        const tipo = 'image/png';
+
+        const payload = {
+          nombre: nombre,
+          tipo: tipo,
+          datos: datosBase64
+        };
+
+        fetch('/guardar-dibujo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(response => {
+          if (response.ok) {
+            alert('Dibujo guardado exitosamente');
+            window.location.reload(); // Recargar la página para mostrar el nuevo dibujo
+          } else {
+            alert('Error al guardar el dibujo');
+          }
+        });
+      });
+    });
+
+    function cerrarSesion() {
+      localStorage.removeItem('token');
+      window.location.href = '/login.html';
+    }
+  </script>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let currentColor = '#000000'; // Color inicial (negro)
+
+    // Obtener el elemento del selector de color
+    const colorPicker = document.getElementById('colorPicker');
+    colorPicker.addEventListener('change', (event) => {
+      currentColor = event.target.value;
+    });
+
+    const startDrawing = (event) => {
+      drawing = true;
+      draw(event);
+    };
+
+    const stopDrawing = () => {
+      drawing = false;
+      ctx.beginPath();
+    };
+
+    const draw = (event) => {
+      if (!drawing) return;
+
+      ctx.lineWidth = 5; // Grosor de la línea
+      ctx.lineCap = 'round'; // Cap de la línea (redondeado)
+      ctx.strokeStyle = currentColor; // Color de la línea
+
+      ctx.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+    };
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mousemove', draw);
+  </script>
+</body>
+</html>

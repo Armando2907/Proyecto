@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #aedcf2, #c0e0f7);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    #loginContainer {
+      width: 400px;
+      text-align: center;
+    }
+    form {
+      width: 100%;
+      padding: 20px;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px; /* Añadimos margen inferior para separar los formularios */
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #2e75b6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none; /* Eliminar subrayado del enlace */
+      display: block; /* Convertir el enlace en un bloque para que ocupe todo el ancho */
+      text-align: center; /* Centrar el texto dentro del botón */
+    }
+    button:hover {
+      background-color: #245e97;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginContainer">
+  <form id="loginForm">
+    <h2 style="text-align: center;">Iniciar sesión</h2>
+    <input type="text" id="usuario" name="usuario" placeholder="Usuario" required>
+    <input type="password" id="password" name="password" placeholder="Contraseña" required>
+    <button type="submit">Iniciar sesión</button>
+  </form>
+
+  <!-- Formulario separado para el botón "Crear cuenta" -->
+  <form action="/registro.html">
+    <button type="submit">Crear cuenta</button>
+  </form>
+</div>
+
+<script>
+  document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+  
+    const usuario = document.getElementById('usuario').value;
+    const password = document.getElementById('password').value;
+  
+    fetch('/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ usuario, password })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Credenciales inválidas');
+      }
+      return response.json();
+    })
+    .then(data => {
+      localStorage.setItem('token', data.token); // Almacena el token en el almacenamiento local
+      window.location.href = '/dashboard';
+    })
+    .catch(error => {
+      console.error(error);
+      alert('Error: Credenciales inválidas');
+    });
+  });
+</script>  
+
+</body>
+</html>
